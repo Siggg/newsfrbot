@@ -16,10 +16,14 @@ while True:
 
     for e in d["entries"]:
         if not e["link"] in already_published:
-            reddit.submit('rue89', e["title"], url=e['link'])
-            sleep(2) # To comply with reddit's policy : no more than 0.5 req/sec
-            already_published.add(e["link"])
-            cPickle.dump(already_published,open("already_published","w"))
-            print print asctime(), e["title"]
+            try:
+                reddit.submit('rue89', e["title"], url=e['link'])
+                sleep(2) # To comply with reddit's policy : no more than 0.5 req/sec
+                already_published.add(e["link"])
+                cPickle.dump(already_published,open("already_published","w"))
+                print asctime(), e["title"]
+            except:
+		print "Exception : Reddit offline ? Retrying in 5 minutes"
+		sleep(300)
     sleep(300)
 
