@@ -6,7 +6,7 @@ import traceback
 import sys
 import getpass
 
-from time import *
+from time import asctime
 
 # TODO : improve the "database" system that will get corrupted if interrupted and take o(n) time with n=entries already published
 
