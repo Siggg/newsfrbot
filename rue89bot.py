@@ -21,11 +21,15 @@ already_published = cPickle.load(open("already_published","rb"))
 
 while True:
     try:
-        rue89feed = feedparser.parse('http://rue89.feedsportal.com/c/33822/f/608948/index.rss')
-        lemondefeed = feedparser.parse('http://www.lemonde.fr/rss/une.xml')
-        lefigarofeed = feedparser.parse('http://rss.lefigaro.fr/lefigaro/laune?format=xml')
 
-        for d in [('rue89', rue89feed), ('lemonde', lemondefeed), ('lefigaro', lefigarofeed)]:
+        rue89feed = feedparser.parse('http://www.rue89.com/feed/google-editors-pick')
+
+        # Switched off for now
+        #lemondefeed = feedparser.parse('http://www.lemonde.fr/rss/une.xml')
+        #lefigarofeed = feedparser.parse('http://rss.lefigaro.fr/lefigaro/laune?format=xml')
+
+        #for d in [('rue89', rue89feed), ('lemonde', lemondefeed), ('lefigaro', lefigarofeed)]:
+        for d in [('rue89', rue89feed)]:
             for e in d[1]["entries"]:
                 if not e["link"] in already_published:
                     try:
