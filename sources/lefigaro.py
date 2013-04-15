@@ -28,7 +28,8 @@ def get():
                 sys.stdout.write(".")
                 sys.stdout.flush()
         except: 
-            print "Exception reading Le Figaro."
+            sys.stdout.write("E")
+            sys.stdout.flush()
             traceback.print_exc()
             pass
     sys.stdout.write("\n")

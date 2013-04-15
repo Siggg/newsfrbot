@@ -38,7 +38,8 @@ def get():
                 sys.stdout.flush()
                 
         except: 
-            print "Exception reading Le Monde."
+            sys.stdout.write("E")
+            sys.stdout.flush()
             pass
     sys.stdout.write("\n")
     sys.stdout.flush()
