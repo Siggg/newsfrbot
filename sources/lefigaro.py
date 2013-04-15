@@ -30,7 +30,6 @@ def get():
         except: 
             sys.stdout.write("E")
             sys.stdout.flush()
-            traceback.print_exc()
             pass
     sys.stdout.write("\n")
     sys.stdout.flush()
