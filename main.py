@@ -31,12 +31,13 @@ while True:
         
 
         for d in [('lefigaro', lefigarofeed), ('lemonde', lemondefeed), ('rue89', rue89feed)]:
+        #for d in [('lemonde', lemondefeed), ('rue89', rue89feed)]:
             for e in d[1]:
                 if not e['link'] in already_published:
                     try:
                         print asctime(), "Publishing on",d[0],":", e['title']
+                        print type(e['title']), type(e['link'])
                         reddit.submit(d[0], e['title'], url=e['link'])
-                        print d[0], e['title'], e['link']
                         sleep(10) # To comply with reddit's policy : no more than 0.5 req/sec
                         already_published.add(e['link'])
                         cPickle.dump(already_published,open("already_published","w"))

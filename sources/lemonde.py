@@ -51,8 +51,10 @@ def get():
     arts = soup.find(id="les-plus-commentes-2j").findAll("a")
     for a in arts:
         if not a.has_key('title'):
-            ret.append({'title':a.text, 'link':a["href"]})
-    
+            sys.stdout.write("O")
+            sys.stdout.flush()
+            ret.append({'title':a.renderContents().decode("utf8"), 'link':u"http://lemonde.fr/"+a["href"]})
+    sys.stdout.write("\n")
     return ret
 
 
