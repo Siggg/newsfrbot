@@ -3,6 +3,7 @@ from urllib import urlopen
 import feedparser
 import sys
 from time import sleep
+import traceback
 
 def get():
     
@@ -10,7 +11,7 @@ def get():
 
     print "Reading Le Monde"
     ret=list()
-    feed = feedparser.parse("http://rss.lemonde.fr/c/205/f/3050/index.rss")
+    """feed = feedparser.parse("http://rss.lemonde.fr/c/205/f/3050/index.rss")
     for e in feed["entries"]:
         # Finds the url of the comment page
         sleep(2) # To not be too hard on the website
@@ -30,19 +31,28 @@ def get():
                         break
 
             if c>THRESHOLD:
-                sys.stdout.write("O")
+                sys.stdout.write(str(c)+" ")
                 sys.stdout.flush()
                 ret.append({'title':e["title"], 'link':e["link"]})
             else:
-                sys.stdout.write(".")
+                sys.stdout.write("("+str(c)+") ")
                 sys.stdout.flush()
                 
         except: 
-            sys.stdout.write("E")
+            sys.stdout.write("E ")
             sys.stdout.flush()
-            pass
+            traceback.print_exc()
+            pass            
     sys.stdout.write("\n")
-    sys.stdout.flush()
+    sys.stdout.flush()"""
+    
+    s=urlopen("http://www.lemonde.fr/rss/").read()
+    soup=BeautifulSoup(s)
+    arts = soup.find(id="les-plus-commentes-2j").findAll("a")
+    for a in arts:
+        if not a.has_key('title'):
+            ret.append({'title':a.text, 'link':a["href"]})
+    
     return ret
 
 
