@@ -17,8 +17,8 @@ from time import *
 reddit = praw.Reddit(user_agent='Newsfr bot, by u/keepthepace')
 user='newsfrbot'
 print "Password for",user,"?"
-#passwd=getpass.getpass()
-#reddit.login(user, passwd)
+passwd=getpass.getpass()
+reddit.login(user, passwd)
 
 already_published = cPickle.load(open("already_published","rb"))
 
@@ -35,7 +35,7 @@ while True:
                 if not e['link'] in already_published:
                     try:
                         print asctime(), "Publishing on",d[0],":", e['title']
-                        #reddit.submit(d[0], e['title'], url=e['link'])
+                        reddit.submit(d[0], e['title'], url=e['link'])
                         print d[0], e['title'], e['link']
                         sleep(10) # To comply with reddit's policy : no more than 0.5 req/sec
                         already_published.add(e['link'])
