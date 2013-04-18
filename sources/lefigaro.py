@@ -24,7 +24,7 @@ from time import sleep
 
 def get():
     
-    THRESHOLD = 100 # Number of minimum comments to publish the article
+    THRESHOLD = 200 # Number of minimum comments to publish the article
 
     print "Reading Le Figaro"
     ret=list()

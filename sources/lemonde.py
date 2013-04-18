@@ -65,8 +65,8 @@ def get():
     s=urlopen("http://www.lemonde.fr/rss/").read()
     soup=BeautifulSoup(s)
     newurl = "http://lemonde.fr"+soup.find(id="les-plus-commentes-2j").first()["uri"]
-    s=urlopen(newurl)
-    soup=BeautifulSoup(s)
+    s=urlopen(newurl).read()
+    soup=BeautifulSoup(s.decode("latin1"))
     arts = soup.findAll("a")
     for a in arts:
         if not a.has_key('title'):
