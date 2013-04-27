@@ -14,9 +14,7 @@
 #
 # (C) Copyright Yves Quemener, 2012
 
-import sources.rue89
-import sources.lemonde
-import sources.lefigaro
+import sources.twitter_siggg
 import feedparser
 import cPickle
 import praw
@@ -30,24 +28,28 @@ from time import *
 
 # TODO : improve the "database" system that will get corrupted if interrupted and take o(n) time with n=entries already published
 
-reddit = praw.Reddit(user_agent='Newsfr bot, by u/keepthepace')
-user='newsfrbot'
+reddit = praw.Reddit(user_agent='Rss2Reddit bot, by u/jeanAkaSiggg')
+user='JeanBot001'
 print "Password for",user,"?"
 passwd=getpass.getpass()
 reddit.login(user, passwd)
 
-already_published = cPickle.load(open("already_published","rb"))
+
+try:
+    apFile = open("already_published","rb")
+except IOError:
+    cPickle.dump(set(),open("already_published","wb"))
+    apFile = open("already_published","rb")
+
+already_published = cPickle.load(apFile)
 
 while True:
     try:
 
-        rue89feed = sources.rue89.get()
-        lemondefeed = sources.lemonde.get()
-        lefigarofeed = sources.lefigaro.get()
+        sigggfeed = sources.twitter_siggg.get()
         
 
-        for d in [('lefigaro', lefigarofeed), ('lemonde', lemondefeed), ('rue89', rue89feed)]:
-        #for d in [('lemonde', lemondefeed), ('rue89', rue89feed)]:
+        for d in [('Test201304001', sigggfeed)]:
             for e in d[1]:
                 if not e['link'] in already_published:
                     try:
