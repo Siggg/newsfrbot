@@ -74,12 +74,12 @@ def get():
                 if len(twittedLink) < 18:
                     # truncated !
                     # don't try to dereference it
-                    shortLinks['twittedLink'] = twittedLink
+                    shortLinks[twittedLink] = twittedLink
                     cPickle.dump(shortLinks,open("shortLinks","w"))
             # Not truncated, let's proceed with dereferencing ths link
             if twittedLink in shortLinks.keys():
                 # We've already dereferenced this link.
-                finalUrl = shortLinks['twittedLink']
+                finalUrl = shortLinks[twittedLink]
             else:
                 # Let's dereference this link.
                 try:
@@ -108,7 +108,7 @@ def get():
                     print asctime(),"Could not open link above ; will skip."
                     continue
                 # Let's remember the final URL for this twittedLink
-                shortLinks['twittedLink'] = finalUrl
+                shortLinks[twittedLink] = finalUrl
                 cPickle.dump(shortLinks,open("shortLinks","w"))
             # OK. We know the final url of the link this tweet is about.
             # Let's model this tweet a bit.
