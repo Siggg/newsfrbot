@@ -14,7 +14,7 @@
 #
 # (C) Copyright Yves Quemener, 2012
 
-import sources.twitter_list
+import sources.twitter
 import feedparser
 import cPickle
 import praw
@@ -48,7 +48,7 @@ except IOError:
 while True:
     try:
 
-        twitterFeed = sources.twitter_list.get()
+        twitterFeed = sources.twitter.get()
         
         for d in [('Test201304001', twitterFeed)]:
             for e in d[1]:
