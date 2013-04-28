@@ -51,6 +51,9 @@ def get():
     ret=list()
     feedURLs = []
     # feedURLs += ['http://twitter-rss.com/user_timeline.php?screen_name=' + uid for uid in twitterUserIds]
+    # Generate your own Twitter RSS feeds by means of a Google Script
+    # just follow the instructinos at http://www.labnol.org/internet/twitter-rss-feeds/27931/
+    # Please DO NOT use the URLs below but generate your own ones. 
     feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=list&q=petermortimer/di' ]
     feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=%23education OR %23edtech lang%3Afr include%3Aretweets&src=typd' ]
     feeds = [feedparser.parse(url) for url in feedURLs]
