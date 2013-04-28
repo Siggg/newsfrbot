@@ -14,7 +14,7 @@
 #
 # (C) Copyright Yves Quemener, 2012
 
-import sources.twitter_siggg
+import sources.twitter_list
 import feedparser
 import cPickle
 import praw
@@ -31,31 +31,28 @@ from time import *
 reddit = praw.Reddit(user_agent='Rss2Reddit bot, by u/jeanAkaSiggg')
 user='JeanBot001'
 print "Password for",user,"?"
-passwd=getpass.getpass()
-reddit.login(user, passwd)
+#passwd=getpass.getpass()
+#reddit.login(user, passwd)
 
 
 try:
-    apFile = open("already_published","rb")
+    already_published = cPickle.load(open("already_published","rb"))
 except IOError:
-    cPickle.dump(set(),open("already_published","wb"))
-    apFile = open("already_published","rb")
+    already_published = set()
 
-already_published = cPickle.load(apFile)
 
 while True:
     try:
 
-        sigggfeed = sources.twitter_siggg.get()
+        twitterFeed = sources.twitter_list.get()
         
-
-        for d in [('Test201304001', sigggfeed)]:
+        for d in [('Test201304001', twitterFeed)]:
             for e in d[1]:
                 if not e['link'] in already_published:
                     try:
                         print asctime(), "Publishing on",d[0],":", e['title']
-                        reddit.submit(d[0], e['title'], url=e['link'])
-                        sleep(10) # To comply with reddit's policy : no more than 0.5 req/sec
+                        # reddit.submit(d[0], e['title'], url=e['link'])
+                        sleep(2) # To comply with reddit's policy : no more than 0.5 req/sec
                         already_published.add(e['link'])
                         cPickle.dump(already_published,open("already_published","w"))
                     except praw.errors.APIException as ex:
@@ -75,6 +72,7 @@ while True:
     except:
         print asctime(),"Exception in main program : "
         traceback.print_exc()
-    sleep(300)
+    print asctime(),"Taking a short nap now."
+    sleep(600)
 
 
