@@ -1,10 +1,10 @@
-# This file is part of newsfrbot.
+# This file is part of rss2reddit_using_newsfrbot.
 # 
-# Newsfrbot is free software: you can redistribute it and/or modify
+# rss2reddit_using_newsfrbot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as published by
 # the Free Software Foundation.
 # 
-# Newsfrbot is distributed in the hope that it will be useful,
+# rss2reddit_using_newsfrbot is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -13,6 +13,7 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 # (C) Copyright Yves Quemener, 2012
+# (C) Copyright Jean Millerat, 2013
 
 import sources.twitter
 import feedparser
@@ -33,7 +34,7 @@ NAP_DURATION = 300
 # TODO : improve the "database" system that will get corrupted if interrupted and take o(n) time with n=entries already published
 
 reddit = praw.Reddit(user_agent='Rss2Reddit bot, by u/jeanAkaSiggg')
-user='JeanBot001'
+user='rss2redditBot'
 print "Password for",user,"?"
 passwd=getpass.getpass()
 reddit.login(user, passwd)
@@ -78,5 +79,3 @@ while True:
         traceback.print_exc()
     print asctime(),"Taking a short nap now, for ", NAP_DURATION, " seconds."
     sleep(NAP_DURATION)
-
-

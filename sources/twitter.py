@@ -1,3 +1,5 @@
+# This Python file uses the following encoding: utf-8
+#
 # This file is part of rss2reddit_using_newsfrbot.
 # 
 # rss2reddit_using_newsfrbot is free software: you can redistribute it and/or modify
@@ -25,7 +27,7 @@ import traceback, sys
 
 # How many twitter users must mention a link before it is
 # retained as a link worth mentioning
-TWITTOS_THRESHOLD = 3
+TWITTOS_THRESHOLD = 2
 
 try:
     knownTweets = cPickle.load(open("knownTweets","rb"))
@@ -44,7 +46,8 @@ twitterUserIds = ['siggg',
                   'sandrineventana',
                   'RosinePK',
                   'pluton86',
-                  'MecRouge'
+                  'MecRouge',
+                  'LaurentLepine'
                   ]
 
 def get():
@@ -55,11 +58,21 @@ def get():
     # just follow the instructinos at http://www.labnol.org/internet/twitter-rss-feeds/27931/
     # Please DO NOT use the URLs below but generate your own ones. 
     feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=list&q=petermortimer/di' ]
-    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=%23education OR %23edtech lang%3Afr include%3Aretweets&src=typd' ]
-    feeds = [feedparser.parse(url) for url in feedURLs]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=list&q=siggg/PedagoRique' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=edtech+lang%3Afr+include%3Aretweets&src=typd' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=education+numerique+lang%3Afr+include%3Aretweets&src=typd' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=formation+numerique+lang%3Afr+include%3Aretweets&src=typd' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=apprendre+numerique+lang%3Afr+include%3Aretweets&src=typd' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=pedagogie+numerique+lang%3Afr+include%3Aretweets&src=typd' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=enseignement+numerique+lang%3Afr+include%3Aretweets&src=typd' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=learning+numerique+lang%3Afr+include%3Aretweets&src=typd' ]
+    # Let's access and parse these feeds, and extract their entries
     entries = []
-    for feed in feeds:
-        entries += feed["entries"]
+    for feedURL in feedURLs:
+        sleep(2)
+        feed = feedparser.parse(feedURL)
+        entries += [feed["entries"]]
+    # Let's process each entry from these feeds
     for e in entries:
         tweet = e["title"]
         tweetUrl = e["link"]
