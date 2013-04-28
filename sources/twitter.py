@@ -86,26 +86,26 @@ def get():
                     sleep(1)
                     finalUrl = urlopen(twittedLink).geturl()
                 except HTTPError, err:
-                    print asctime(),"HTTPError : Could not open ",twittedLink," ; retrying once with a trick"
-                    sleep(1)
+                    print asctime(), "HTTPError : Could not open", twittedLink, "; retrying once with a trick"
                     req = Request(twittedLink, headers={'User-Agent' : "Reddit bot"})
                     try:
+                        sleep(1)
                         finalUrl = urlopen(req).geturl()
-                        print asctime(),"Successful trick ! for ", twittedLink
+                        print asctime(), "Successful trick ! for", twittedLink
                     except HTTPError:
                         traceback.print_stack()
                         print sys.exc_info()[0]
-                        print asctime(),"HTTPError : Could not open ",twittedLink," ; will skip"
+                        print asctime(), "HTTPError : Could not open", twittedLink, "; will skip"
                     except:
                         traceback.print_stack()
                         print sys.exc_info()[0]
                         print twittedLink
-                        print asctime(),"Could not open link above ; will skip"
+                        print asctime(), "Could not open link above ; will skip"
                 except:
                     traceback.print_stack()
                     print sys.exc_info()[0]
                     print twittedLink
-                    print asctime(),"Could not open link above ; will skip."
+                    print asctime(), "Could not open link above ; will skip."
                     continue
                 # Let's remember the final URL for this twittedLink
                 shortLinks[twittedLink] = finalUrl
@@ -131,11 +131,12 @@ def get():
             twitterUsers = {}
             for tweet in tweets:
                 twitterUsers[tweet['twitterUserId']] = True
-            twitterUsers = twitterUsers.keys() 
-            if len(twitterUsers) >= TWITTOS_THRESHOLD:
-                # at least 3 twitter users have twitted about this URL
-                print asctime(),len(twitterUsers)," user(s) have twitted about ",finalUrl," ; here they are : ",twitterUsers
+            twitterUsers = twitterUsers.keys()
+            nbOfTwitteUsers = len(twitterUsers)  
+            print asctime(), nbOfTwitteUsers, "user(s) have twitted about", finalUrl, "; here they are :", twitterUsers
+            if nbOfTwitteUsers >= TWITTOS_THRESHOLD:
+                # at least TWITTOS_THRESHOLD twitter users have twitted about this URL
                 for tweet in tweets:
-                    print asctime(),"adding tweet",tweet
+                    print asctime(), "adding tweet", tweet
                     ret.append(tweet)
     return ret
