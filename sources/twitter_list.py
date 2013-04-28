@@ -21,11 +21,21 @@ import re
 from urlparse import urlsplit
 import cPickle
 from time import asctime, sleep
+import traceback, sys
+
+# How many twitter users must mention a link before it is
+# retained as a link worth mentioning
+TWITTOS_THRESHOLD = 3
 
 try:
     knownTweets = cPickle.load(open("knownTweets","rb"))
 except IOError:
     knownTweets = dict()
+
+try:
+    shortLinks = cPickle.load(open("shortLinks","rb"))
+except IOError:
+    shortLinks = dict()
 
 twitterUserIds = ['siggg',
                   'petermortimer',
@@ -39,9 +49,10 @@ twitterUserIds = ['siggg',
 
 def get():
     ret=list()
-    feedURLs = ['http://twitter-rss.com/user_timeline.php?screen_name=' + uid for uid in twitterUserIds]
-    feedURLs += 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=list&q=petermortimer/di'
-    feedURLs += 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=%23education OR %23edtech lang%3Afr include%3Aretweets&src=typd'
+    feedURLs = []
+    # feedURLs += ['http://twitter-rss.com/user_timeline.php?screen_name=' + uid for uid in twitterUserIds]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=list&q=petermortimer/di' ]
+    feedURLs += [ 'https://script.google.com/macros/s/AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E/exec?action=search&q=%23education OR %23edtech lang%3Afr include%3Aretweets&src=typd' ]
     feeds = [feedparser.parse(url) for url in feedURLs]
     entries = []
     for feed in feeds:
@@ -51,32 +62,59 @@ def get():
         tweetUrl = e["link"]
         twittedLinks = re.findall(r'(https?://\S+)',tweet)
         for twittedLink in twittedLinks:
-            # what link is this tweet about ?
-            sleep(1)
+            # This may be a shortened or redirected URL
+            # e.g. http://t.co/.... or http://bit.ly/....
+            # What final URL is this link about ?
             finalUrl = twittedLink
-            try:
-                finalUrl = urlopen(twittedLink).geturl()
-            except HTTPError, err:
-                print asctime(),"HTTPError : Could not open ",twittedLink," ; retrying once with a trick"
-                sleep(1)
-                req = Request(twittedLink, headers={'User-Agent' : "Reddit bot"})
+            # Is this a truncated link ?
+            if twittedLink[:12] in ["http://t.co/", "https://t.co"]:
+                if len(twittedLink) < 18:
+                    # truncated !
+                    # don't try to dereference it
+                    shortLinks['twittedLink'] = twittedLink
+                    cPickle.dump(shortLinks,open("shortLinks","w"))
+            # Not truncated, let's proceed with dereferencing ths link
+            if twittedLink in shortLinks.keys():
+                # We've already dereferenced this link.
+                finalUrl = shortLinks['twittedLink']
+            else:
+                # Let's dereference this link.
                 try:
-                    finalUrl = urlopen(req).geturl()
-                    print asctime(),"Successful trick ! for ", twittedLink
+                    sleep(1)
+                    finalUrl = urlopen(twittedLink).geturl()
                 except HTTPError, err:
-                    print asctime(),"HTTPError : Could not open ",twittedLink," ; will not retry"
+                    print asctime(),"HTTPError : Could not open ",twittedLink," ; retrying once with a trick"
+                    sleep(1)
+                    req = Request(twittedLink, headers={'User-Agent' : "Reddit bot"})
+                    try:
+                        finalUrl = urlopen(req).geturl()
+                        print asctime(),"Successful trick ! for ", twittedLink
+                    except HTTPError:
+                        traceback.print_stack()
+                        print sys.exc_info()[0]
+                        print asctime(),"HTTPError : Could not open ",twittedLink," ; will skip"
+                    except:
+                        traceback.print_stack()
+                        print sys.exc_info()[0]
+                        print twittedLink
+                        print asctime(),"Could not open link above ; will skip"
                 except:
-                    print asctime(),"Could not open ",twittedLink," ; will not retry"
-            except:
-                print asctime(),"Could not open ",twittedLink," ; will skip."
-                continue
+                    traceback.print_stack()
+                    print sys.exc_info()[0]
+                    print twittedLink
+                    print asctime(),"Could not open link above ; will skip."
+                    continue
+                # Let's remember the final URL for this twittedLink
+                shortLinks['twittedLink'] = finalUrl
+                cPickle.dump(shortLinks,open("shortLinks","w"))
             # OK. We know the final url of the link this tweet is about.
-            # Have we already seen it ?
+            # Let's model this tweet a bit.
             twitterUserId = urlsplit(tweetUrl).path.split('/')[1]
             tweet = {'title':tweet,
                      'link':finalUrl,
                      'tweetUrl': tweetUrl,
                      'twitterUserId': twitterUserId}
+            # Have we already seen this final URL ?
             if finalUrl not in knownTweets.keys():
                 # final URL has never been seen before
                 knownTweets[finalUrl] = {tweetUrl: tweet}
@@ -91,7 +129,7 @@ def get():
             for tweet in tweets:
                 twitterUsers[tweet['twitterUserId']] = True
             twitterUsers = twitterUsers.keys() 
-            if len(twitterUsers)>1:
+            if len(twitterUsers) >= TWITTOS_THRESHOLD:
                 # at least 3 twitter users have twitted about this URL
                 print asctime(),len(twitterUsers)," user(s) have twitted about ",finalUrl," ; here they are : ",twitterUsers
                 for tweet in tweets:

@@ -26,13 +26,17 @@ import urllib2
 
 from time import *
 
+# How long in seconds does the bot have to wait before checking
+# its sources once again ?
+NAP_DURATION = 300
+
 # TODO : improve the "database" system that will get corrupted if interrupted and take o(n) time with n=entries already published
 
 reddit = praw.Reddit(user_agent='Rss2Reddit bot, by u/jeanAkaSiggg')
 user='JeanBot001'
 print "Password for",user,"?"
-#passwd=getpass.getpass()
-#reddit.login(user, passwd)
+passwd=getpass.getpass()
+reddit.login(user, passwd)
 
 
 try:
@@ -51,7 +55,7 @@ while True:
                 if not e['link'] in already_published:
                     try:
                         print asctime(), "Publishing on",d[0],":", e['title']
-                        # reddit.submit(d[0], e['title'], url=e['link'])
+                        reddit.submit(d[0], e['title'], url=e['link'])
                         sleep(2) # To comply with reddit's policy : no more than 0.5 req/sec
                         already_published.add(e['link'])
                         cPickle.dump(already_published,open("already_published","w"))
@@ -72,7 +76,7 @@ while True:
     except:
         print asctime(),"Exception in main program : "
         traceback.print_exc()
-    print asctime(),"Taking a short nap now."
-    sleep(600)
+    print asctime(),"Taking a short nap now, for ", NAP_DURATION, " seconds."
+    sleep(NAP_DURATION)
 
 
