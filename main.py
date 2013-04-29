@@ -57,6 +57,7 @@ while True:
         for e in twitterFeed:
             url = e['link']
             tweet = e['title']
+            tweetUrl = e["tweetUrl"]
             if not url in already_published:
                 try:
                     print asctime(), "Publishing on", subReddit, ":", tweet
@@ -70,7 +71,6 @@ while True:
                         already_published.add(url)
                         print "Already published :", tweet
                         cPickle.dump(already_published,open("already_published","w"))
-                        tweetUrl = e["tweetUrl"]
                         if tweetUrl not in already_published:
                             formerSubmission = [f for f in reddit.get_info(url=url) if f.subreddit.display_name == subReddit][0]
                             comment = u"[Lien twitté](" + tweetUrl + u")"
