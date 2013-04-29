@@ -27,7 +27,7 @@ import traceback, sys
 
 # How many twitter users must mention a link before it is
 # retained as a link worth mentioning
-TWITTOS_THRESHOLD = 2
+TWITTOS_THRESHOLD = 3
 
 try:
     knownTweets = cPickle.load(open("knownTweets","rb"))
@@ -71,12 +71,12 @@ def get():
     for feedURL in feedURLs:
         sleep(2)
         feed = feedparser.parse(feedURL)
-        entries += [feed["entries"]]
+        entries += feed.entries
     # Let's process each entry from these feeds
     for e in entries:
-        tweet = e["title"]
+        tweetText = e["title"]
         tweetUrl = e["link"]
-        twittedLinks = re.findall(r'(https?://\S+)',tweet)
+        twittedLinks = re.findall(r'(https?://\S+)', tweetText)
         for twittedLink in twittedLinks:
             # This may be a shortened or redirected URL
             # e.g. http://t.co/.... or http://bit.ly/....
@@ -126,7 +126,7 @@ def get():
             # OK. We know the final url of the link this tweet is about.
             # Let's model this tweet a bit.
             twitterUserId = urlsplit(tweetUrl).path.split('/')[1]
-            tweet = {'title':tweet,
+            tweet = {'title':tweetText,
                      'link':finalUrl,
                      'tweetUrl': tweetUrl,
                      'twitterUserId': twitterUserId}
