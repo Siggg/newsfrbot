@@ -54,34 +54,39 @@ while True:
         twitterFeed = sources.twitter.get()
         
         subReddit = u'Test201304001'
-        for e in twitterFeed:
-            url = e['link']
-            tweet = e['title']
-            tweetUrl = e["tweetUrl"]
-            if not url in already_published:
+        for link, tweet in twitterFeed:
+            if not tweet.url in already_published:
                 try:
-                    print asctime(), "Publishing on", subReddit, ":", tweet
-                    reddit.submit(subReddit, tweet, url=url)
+                    print asctime(), "Publishing on", subReddit, ":", tweet.text
+                    reddit.submit(subReddit, tweet.text, url=link)
                     sleep(2) # To comply with reddit's policy : no more than 0.5 req/sec
-                    already_published.add(url) # the link
-                    already_published.add(tweetUrl) # the tweet mentioning the link
+                    already_published.add(link) # the link
+                    already_published.add(tweet.url) # the tweet mentioning the link
                     cPickle.dump(already_published,open("already_published","w"))
                 except praw.errors.APIException as ex:
                     if ex.error_type=='ALREADY_SUB':
-                        already_published.add(url)
-                        print "Already published :", tweet
+                        already_published.add(link)
+                        print "Already published :", tweet.text
                         cPickle.dump(already_published,open("already_published","w"))
-                        if tweetUrl not in already_published:
-                            formerSubmission = [f for f in reddit.get_info(url=url) if f.subreddit.display_name == subReddit][0]
-                            comment = u"[Lien twitté](" + tweetUrl + u")"
-                            comment += u" par [" + e["twitterUserId"] + u"](https://twitter.com/" + e["twitterUserId"] + ") "
-                            comment += u": " + tweet
-                            print asctime(), "Commenting on", subReddit, ":", comment
+                        if tweet.url not in already_published:
+                            formerSubmission = \
+                                [f for f in reddit.get_info(url=link)
+                                 if f.subreddit.display_name == subReddit][0]
+                            comment = u"[Lien twitté](" + tweet.url + u")"
+                            comment += u" par [" + e["twitterUserId"] + u"]"
+                            comment += u"(https://twitter.com/"
+                            comment += e["twitterUserId"] + u") "
+                            comment += u": " + tweet.text
+                            print asctime(), \
+                                  "Commenting on", subReddit, ":", \
+                                  comment
                             formerSubmission.add_comment(comment)
-                            already_published.add(tweetUrl)
-                            cPickle.dump(already_published,open("already_published","w"))
+                            already_published.add(tweet.url)
+                            cPickle.dump(already_published,
+                                         open("already_published","w"))
                     else:
-                        print asctime(),"Exception : Reddit offline ? Retrying in 5 minutes"
+                        print asctime(), \
+                              "Exception : Reddit offline ? Retrying in 5 minutes"
                         traceback.print_stack()
                         print ex.error_type
                         print ex.message
