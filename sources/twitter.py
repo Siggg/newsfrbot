@@ -115,11 +115,12 @@ class Link:
             # Let's remember the final URL for this twittedLink
             shortLinks[link] = finalUrl
             cPickle.dump(shortLinks,open("shortLinks","w"))
-        try:
-            index = finalUrl.index("?utm_")
-            finalUrl = finalUrl[:index]
-        except ValueError:
-            pass
+        for uselessSuffix in ["?utm_", "&utm_"]:
+            try:
+                index = finalUrl.index(uselessSuffix)
+                finalUrl = finalUrl[:index]
+            except ValueError:
+                pass
         self.url = finalUrl
                         
 class Tweet:
