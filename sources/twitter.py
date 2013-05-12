@@ -25,9 +25,42 @@ import cPickle
 from time import asctime, sleep
 import traceback, sys
 
-# How many twitter users must mention a link before it is
+# How many users from the twitter lists must mention a link before it is
 # retained as a link worth mentioning
+
 TWITTOS_THRESHOLD = 3
+
+# Which search queries to you want the bot to monitor for news your lists
+# members may retweet ?
+
+queries = [ 'edtech+lang%3Afr',
+            'education+numerique+lang%3Afr',
+            'formation+numerique+lang%3Afr',
+            'apprendre+numerique+lang%3Afr',
+            'pedagogie+numerique+lang%3Afr',
+            'enseignement+numerique+lang%3Afr',
+            'learning+numerique+lang%3Afr' ]
+
+# Which twitter lists will trigger publication by the bot whenever enough
+# of their members retweet some link ?
+
+lists = [ 'petermortimer/di',
+          'siggg/PedagoRique' ]
+
+# CAUTION : you MUST follow the instructions on labnol.org so that you get
+# YOUR OWN myGoogleScriptID. DO NOT USE the one given below.
+#
+#   http://www.labnol.org/internet/twitter-rss-feeds/27931/
+#
+# These instructions will show you how to generate your own Google Script
+# and let it to parse Twitter pages using your Twitter user account (and not
+# mine...) and generate RSS feeds in return.
+# Once your own Google Script is generated, copy the long ID string from
+# its URL and paste it as the value of the myGoogleScriptID variable below :
+
+myGoogleScriptID = 'AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E'
+
+# That's it for configuration variables.
 
 try:
     alreadyProcessed = cPickle.load(open("alreadyProcessed","rb"))
@@ -130,8 +163,7 @@ class Tweet:
         self.userId = urlsplit(self.url).path.split('/')[1]
         self.alreadyProcessed = self.url in alreadyProcessed
         if not self.alreadyProcessed:
-            linkUrls = re.findall(r'(https?://\S+)', self.text)
-            self.links = [Link(url) for url in linkUrls]
+            self.links = self.validLinks()
             for link in self.links:
                 # Have we already seen this link ?
                 # This link was tweeted at this URL with that tweet
@@ -143,33 +175,28 @@ class Tweet:
                     knownTweets[link.url][self.url] = self
                 # Let's remember this tweet.
                 cPickle.dump(knownTweets,open("knownTweets","w"))
+    def validLinks(self):
+        links = []
+        for url in re.findall(r'(https?://\S+)', self.text):
+            if url is None:
+                continue
+            if len(url) <= 12 or url[-1:] == u"…":
+                continue
+            if url[:12] in ["http://t.co/", "https://t.co"] and len(url) < 18:
+                continue
+            if url[:16] in ["http://paper.li/"]:
+                continue
+            links.append(Link(url))
+        return links
+
             
 
 def get():
     ret=list()
     TEMPORARILY_SKIPS = []
 
-    # Generate your own Twitter RSS feeds by means of a Google Script.
-    #
-    # PLEASE DO NOT use the googleScriptID below but follow the inscriptions
-    # below to generate your own one (copy it from the URL of the script you
-    # will have generated). Follow the instructions at
-    #
-    #   http://www.labnol.org/internet/twitter-rss-feeds/27931/
-    #
-    
-    googleScriptID = 'AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E'
-
-    queries = [ 'edtech+lang%3Afr',
-                'education+numerique+lang%3Afr',
-                'formation+numerique+lang%3Afr',
-                'apprendre+numerique+lang%3Afr',
-                'pedagogie+numerique+lang%3Afr',
-                'enseignement+numerique+lang%3Afr',
-                'learning+numerique+lang%3Afr' ]
-    
     scriptPrefix = 'https://script.google.com/macros/s/' \
-                    + googleScriptID \
+                    + myGoogleScriptID \
                     + '/exec?action='
     
     nonListFeeds = [ scriptPrefix
@@ -195,9 +222,6 @@ def get():
 
     # Now let's examine tweets from the lists and check their links
                     
-    lists = [ 'petermortimer/di',
-              'siggg/PedagoRique' ]
-    
     listFeeds = [ scriptPrefix
                  + 'list&q='
                  + l
