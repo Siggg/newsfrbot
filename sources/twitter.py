@@ -65,17 +65,19 @@ myGoogleScriptID = 'AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E'
 try:
     alreadyProcessed = cPickle.load(open("alreadyProcessed","rb"))
 except IOError:
-    alreadyProcessed = set()
+    alreadyProcessed = set() # alreadyProcessed = set(['someUrl'])
 
 try:
     knownTweets = cPickle.load(open("knownTweets","rb"))
 except IOError:
     knownTweets = dict()
+    # entry = {'link': 'someLink', 'title':'someTitle'}
+    # knownTweets["url"] = {"url": entry}
 
 try:
     shortLinks = cPickle.load(open("shortLinks","rb"))
 except IOError:
-    shortLinks = dict()
+    shortLinks = dict() # shortLinks["shortUrl"] = "finalUrl"
 
 TEMPORARILY_SKIPS = []
 
@@ -95,58 +97,58 @@ class Link:
         """ sets the final URL of the page we are redirected to when trying
         to access the link URL """
         # Is this a truncated link ?
-        link = self.shortUrl
-        if link[:12] in ["http://t.co/", "https://t.co"] or link[-1:] == u"…":
-            if len(link) < 18 or link[-1:] == u"…":
+        shortUrl = self.shortUrl
+        if shortUrl[:12] in ["http://t.co/", "https://t.co"] or shortUrl[-1:] == u"…":
+            if len(shortUrl) < 18 or shortUrl[-1:] == u"…":
                 # truncated !
                 # don't try to dereference it
-                shortLinks[link] = link
+                shortLinks[shortUrl] = shortUrl
                 cPickle.dump(shortLinks,open("shortLinks","w"))
                 return
         # Not truncated, let's proceed with dereferencing ths link
-        if link in shortLinks.keys():
+        if shortUrl in shortLinks.keys():
             # We've already dereferenced this link.
-            finalUrl = shortLinks[link]
+            finalUrl = shortLinks[shortUrl]
         else:
             # Let's dereference this link.
             try:
                 sleep(1)
-                finalUrl = urlopen(link).geturl()
+                finalUrl = urlopen(shortUrl).geturl()
             except HTTPError, err:
                 print asctime(), \
                       "HTTPError : Could not open", \
-                      link, \
+                      shortUrl, \
                       "; retrying once with a trick"
-                req = Request(link, headers={'User-Agent' : "Reddit bot"})
+                req = Request(shortUrl, headers={'User-Agent' : "Reddit bot"})
                 try:
                     sleep(1)
                     finalUrl = urlopen(req).geturl()
-                    print asctime(), "Successful trick ! for", link
+                    print asctime(), "Successful trick ! for", shortUrl
                 except HTTPError:
                     # traceback.print_stack()
                     print sys.exc_info()[0]
                     print asctime(), \
                           "HTTPError : Could not open", \
-                          link, \
+                          shortUrl, \
                           "; will skip"
-                    TEMPORARILY_SKIPS.append(link)
+                    TEMPORARILY_SKIPS.append(shortUrl)
                     return
                 except:
                     # traceback.print_stack()
                     print sys.exc_info()[0]
-                    print link
+                    print shortUrl
                     print asctime(), "Could not open link above ; will skip"
-                    TEMPORARILY_SKIPS.append(link)
+                    TEMPORARILY_SKIPS.append(shortUrl)
                     return
             except:
                 # traceback.print_stack()
                 print sys.exc_info()[0]
-                print link
+                print shortUrl
                 print asctime(), "Could not open link above ; will skip."
-                TEMPORARILY_SKIPS.append(link)
+                TEMPORARILY_SKIPS.append(shortUrl)
                 return
             # Let's remember the final URL for this twittedLink
-            shortLinks[link] = finalUrl
+            shortLinks[shortUrl] = finalUrl
             cPickle.dump(shortLinks,open("shortLinks","w"))
         for uselessSuffix in ["?utm_", "&utm_"]:
             try:
@@ -158,6 +160,7 @@ class Link:
                         
 class Tweet:
     def __init__(self, entry):
+        self.entry=entry
         self.url = entry["link"]
         self.text = entry["title"]
         self.userId = urlsplit(self.url).path.split('/')[1]
@@ -169,10 +172,10 @@ class Tweet:
                 # This link was tweeted at this URL with that tweet
                 if link.url not in knownTweets.keys():
                     # this URL has never been seen before
-                    knownTweets[link.url] = {self.url: self}
+                    knownTweets[link.url] = {self.url: self.entry}
                 else:
                     # we've already seen this final URL before
-                    knownTweets[link.url][self.url] = self
+                    knownTweets[link.url][self.url] = self.entry
                 # Let's remember this tweet.
                 cPickle.dump(knownTweets,open("knownTweets","w"))
     def validLinks(self):
@@ -237,7 +240,7 @@ def get():
         if not tweet.alreadyProcessed:
             for link in tweet.links:
                 # Now how many distinct twitter users have tweeted about this ?
-                tweets = knownTweets[link.url].values()
+                tweets = [Tweet(entry) for entry in knownTweets[link.url].values()]
                 twitterUsers = {}
                 for tweet in tweets:
                     twitterUsers[tweet.userId] = True

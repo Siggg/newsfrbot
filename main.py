@@ -45,7 +45,7 @@ reddit.login(user, passwd)
 try:
     already_published = cPickle.load(open("already_published","rb"))
 except IOError:
-    already_published = set()
+    already_published = set() # already_published = set(["someUrl"])
 
 
 while True:
