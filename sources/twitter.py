@@ -65,7 +65,7 @@ myGoogleScriptID = 'AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E'
 try:
     alreadyProcessed = cPickle.load(open("alreadyProcessed","rb"))
 except IOError:
-    alreadyProcessed = set() # alreadyProcessed = set(['someUrl'])
+    alreadyProcessed = dict() # alreadyProcessed = {'someUrl': True}
 
 try:
     knownTweets = cPickle.load(open("knownTweets","rb"))
@@ -164,18 +164,19 @@ class Tweet:
         self.url = entry["link"]
         self.text = entry["title"]
         self.userId = urlsplit(self.url).path.split('/')[1]
-        self.alreadyProcessed = self.url in alreadyProcessed
+        self.alreadyProcessed = self.url in alreadyProcessed.keys()
         if not self.alreadyProcessed:
             self.links = self.validLinks()
             for link in self.links:
                 # Have we already seen this link ?
                 # This link was tweeted at this URL with that tweet
+                dictEntry = {"link":entry["link"], "title":entry["title"]}
                 if link.url not in knownTweets.keys():
                     # this URL has never been seen before
-                    knownTweets[link.url] = {self.url: self.entry}
+                    knownTweets[link.url] = {self.url: dictEntry}
                 else:
                     # we've already seen this final URL before
-                    knownTweets[link.url][self.url] = self.entry
+                    knownTweets[link.url][self.url] = dictEntry
                 # Let's remember this tweet.
                 cPickle.dump(knownTweets,open("knownTweets","w"))
     def validLinks(self):
@@ -190,6 +191,9 @@ class Tweet:
             if url[:16] in ["http://paper.li/"]:
                 continue
             links.append(Link(url))
+        self.alreadyProcessed = True
+        alreadyProcessed[self.url] = True
+        cPickle.dump(alreadyProcessed,open("alreadyProcessed","w"))
         return links
 
             

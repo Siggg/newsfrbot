@@ -45,7 +45,7 @@ reddit.login(user, passwd)
 try:
     already_published = cPickle.load(open("already_published","rb"))
 except IOError:
-    already_published = set() # already_published = set(["someUrl"])
+    already_published = dict() # already_published = {"someUrl": True}
 
 
 while True:
@@ -53,22 +53,22 @@ while True:
 
         twitterFeed = sources.twitter.get()
         
-        subReddit = u'Test201304001'
+        subReddit = u'PedagoRique'
         for link, tweet in twitterFeed:
-            if not tweet.url in already_published:
+            if not tweet.url in already_published.keys():
                 try:
                     print asctime(), "Publishing on", subReddit, ":", tweet.text
                     reddit.submit(subReddit, tweet.text, url=link.url)
                     sleep(2) # To comply with reddit's policy : no more than 0.5 req/sec
-                    already_published.add(link.url) # the link
-                    already_published.add(tweet.url) # the tweet mentioning the link
+                    already_published[link.url] = True # the link
+                    already_published[tweet.url] = True # the tweet mentioning the link
                     cPickle.dump(already_published,open("already_published","w"))
                 except praw.errors.APIException as ex:
                     if ex.error_type=='ALREADY_SUB':
-                        already_published.add(link.url)
+                        already_published[link.url] = True
                         print "Already published :", tweet.text
                         cPickle.dump(already_published,open("already_published","w"))
-                        if tweet.url not in already_published:
+                        if tweet.url not in already_published.keys():
                             formerSubmission = \
                                 [f for f in reddit.get_info(url=link.url)
                                  if f.subreddit.display_name == subReddit][0]
@@ -81,7 +81,7 @@ while True:
                                   "Commenting on", subReddit, ":", \
                                   comment
                             formerSubmission.add_comment(comment)
-                            already_published.add(tweet.url)
+                            already_published[tweet.url] = True
                             cPickle.dump(already_published,
                                          open("already_published","w"))
                     else:
