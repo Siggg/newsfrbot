@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+﻿# This Python file uses the following encoding: utf-8
 #
 # This file is part of rss2reddit_using_newsfrbot.
 # 
@@ -63,16 +63,16 @@ myGoogleScriptID = 'AKfycbzw8ku5gvJKcWFYHOQS_Dv_6cLECkULNOBaJemN9caSQMl6q7E'
 # That's it for configuration variables.
 
 try:
-    alreadyProcessed = cPickle.load(open("alreadyProcessed","rb"))
+    indexedTweets = cPickle.load(open("indexedTweets","rb"))
 except IOError:
-    alreadyProcessed = dict() # alreadyProcessed = {'someUrl': True}
+    indexedTweets = dict() # indexedTweets = {'someTweetUrl': True}
 
 try:
-    knownTweets = cPickle.load(open("knownTweets","rb"))
+    tweetsIndexedByLinks = cPickle.load(open("tweetsIndexedByLinks","rb"))
 except IOError:
-    knownTweets = dict()
-    # entry = {'link': 'someLink', 'title':'someTitle'}
-    # knownTweets["url"] = {"url": entry}
+    tweetsIndexedByLinks = dict()
+    # entry = {'link': 'someTweetUrl', 'title':'someTweetText'}
+    # tweetsIndexedByLinks[someLinkUrl] = {someTweetUrl: entry}
 
 try:
     shortLinks = cPickle.load(open("shortLinks","rb"))
@@ -82,8 +82,13 @@ except IOError:
 TEMPORARILY_SKIPS = []
 
 class Link:
+
+    """ A class of hyperlinks which may have a short URL and
+    a final URL once redirected from the short URL. """
+
     def __init__(self,url):
-        self.shortUrl = url
+
+        self.shortUrl = url.strip()
         # This may be a shortened or redirected URL
         # e.g. http://t.co/.... or http://bit.ly/....
         # What final URL is this link about ?
@@ -94,94 +99,105 @@ class Link:
             self.url = self.shortUrl
     
     def dereference(self):
-        """ sets the final URL of the page we are redirected to when trying
+
+        """ Sets the final URL of the page we are redirected to when trying
         to access the link URL """
+
         # Is this a truncated link ?
         shortUrl = self.shortUrl
         if shortUrl[:12] in ["http://t.co/", "https://t.co"] or shortUrl[-1:] == u"…":
             if len(shortUrl) < 18 or shortUrl[-1:] == u"…":
                 # truncated !
                 # don't try to dereference it
-                shortLinks[shortUrl] = shortUrl
-                cPickle.dump(shortLinks,open("shortLinks","w"))
+                shortLinks[shortUrl] = shortUrl.strip()
+                cPickle.dump(shortLinks,open("shortLinks","wb"))
                 return
         # Not truncated, let's proceed with dereferencing ths link
-        if shortUrl in shortLinks.keys():
+        if shortUrl in [sl.strip() for sl in shortLinks.keys()]:
             # We've already dereferenced this link.
-            finalUrl = shortLinks[shortUrl]
+            finalUrl = shortLinks[shortUrl].strip()
         else:
             # Let's dereference this link.
             try:
                 sleep(1)
-                finalUrl = urlopen(shortUrl).geturl()
+                finalUrl = urlopen(shortUrl).geturl().strip()
             except HTTPError, err:
                 print asctime(), \
                       "HTTPError : Could not open", \
-                      shortUrl, \
+                      shortUrl.encode("utf8","replace"), \
                       "; retrying once with a trick"
                 req = Request(shortUrl, headers={'User-Agent' : "Reddit bot"})
                 try:
                     sleep(1)
                     finalUrl = urlopen(req).geturl()
-                    print asctime(), "Successful trick ! for", shortUrl
+                    print asctime(), "Successful trick ! for", shortUrl.encode("utf8","replace")
                 except HTTPError:
                     # traceback.print_stack()
                     print sys.exc_info()[0]
                     print asctime(), \
                           "HTTPError : Could not open", \
-                          shortUrl, \
+                          shortUrl.encode("utf8","replace"), \
                           "; will skip"
                     TEMPORARILY_SKIPS.append(shortUrl)
                     return
                 except:
                     # traceback.print_stack()
                     print sys.exc_info()[0]
-                    print shortUrl
+                    print shortUrl.encode("utf8","replace")
                     print asctime(), "Could not open link above ; will skip"
                     TEMPORARILY_SKIPS.append(shortUrl)
                     return
             except:
                 # traceback.print_stack()
                 print sys.exc_info()[0]
-                print shortUrl
+                print shortUrl.encode("utf8","replace")
                 print asctime(), "Could not open link above ; will skip."
                 TEMPORARILY_SKIPS.append(shortUrl)
                 return
             # Let's remember the final URL for this twittedLink
-            shortLinks[shortUrl] = finalUrl
-            cPickle.dump(shortLinks,open("shortLinks","w"))
+            shortLinks[shortUrl] = finalUrl.strip()
+            cPickle.dump(shortLinks,open("shortLinks","wb"))
         for uselessSuffix in ["?utm_", "&utm_"]:
             try:
                 index = finalUrl.index(uselessSuffix)
                 finalUrl = finalUrl[:index]
             except ValueError:
                 pass
-        self.url = finalUrl
-                        
+        self.url = finalUrl.strip()
+
 class Tweet:
+
+    """ A class of tweets whith links which can be processed for publication
+    if they are famous enough. """
+
     def __init__(self, entry):
+
+        """ Instantiates a tweet from an RSS entry representing a tweet. """
+
         self.entry=entry
-        self.url = entry["link"]
+        self.url = entry["link"].strip()
         self.text = entry["title"]
+        print
+        print self.text.encode("utf8","replace")[:80]
         self.userId = urlsplit(self.url).path.split('/')[1]
-        self.alreadyProcessed = self.url in alreadyProcessed.keys()
-        if not self.alreadyProcessed:
-            self.links = self.validLinks()
-            for link in self.links:
-                # Have we already seen this link ?
-                # This link was tweeted at this URL with that tweet
-                dictEntry = {"link":entry["link"], "title":entry["title"]}
-                if link.url not in knownTweets.keys():
-                    # this URL has never been seen before
-                    knownTweets[link.url] = {self.url: dictEntry}
-                else:
-                    # we've already seen this final URL before
-                    knownTweets[link.url][self.url] = dictEntry
-                # Let's remember this tweet.
-                cPickle.dump(knownTweets,open("knownTweets","w"))
+
+    def alreadyIndexed(self):
+
+        result = self.url in [url.strip() for url in indexedTweets.keys()]
+        if result == True:
+            print "(already indexed)"
+	else:
+	    print "(indexing)"
+        return result
+
     def validLinks(self):
+
+        """ Returns links extracted from the tweet and filters out links
+        not worth exploring (invalid URLs, ...) """
+
         links = []
         for url in re.findall(r'(https?://\S+)', self.text):
+            url = url.strip()
             if url is None:
                 continue
             if len(url) <= 12 or url[-1:] == u"…":
@@ -191,15 +207,76 @@ class Tweet:
             if url[:16] in ["http://paper.li/"]:
                 continue
             links.append(Link(url))
-        self.alreadyProcessed = True
-        alreadyProcessed[self.url] = True
-        cPickle.dump(alreadyProcessed,open("alreadyProcessed","w"))
         return links
 
-            
+    def indexByLinks(self):
+
+        """ Indexes valid links from the tweet, marks this tweet as indexed in
+        the indexedTweets file and stores the tweet indexed by its links in the
+        tweetsIndexedByLinks file. """
+
+        if self.alreadyIndexed() == True:
+            return
+
+        self.links = self.validLinks()
+        print len(self.links), "valid links"
+        for link in self.links:
+            # Have we already seen this link ?
+            # This link was tweeted at this URL with that tweet
+            dictEntry = {"link": self.url, "title": self.text}
+            if link.url not in tweetsIndexedByLinks.keys():
+                # this link URL has never been seen before
+                tweetsIndexedByLinks[link.url] = {self.url: dictEntry}
+            else:
+                # we've already seen this final URL before
+                tweetsIndexedByLinks[link.url][self.url] = dictEntry
+            # Let's remember this tweet.
+            cPickle.dump(tweetsIndexedByLinks,open("tweetsIndexedByLinks","wb"))
+
+        print asctime(), \
+              len(self.links), \
+              "links indexed in new tweet :", \
+              self.text.encode("utf8","replace")
+        indexedTweets[self.url] = True
+        assert(self.alreadyIndexed())
+        cPickle.dump(indexedTweets,open("indexedTweets","wb"))
+
+    def linksToPublish(self):
+
+        """ Returns (link, self) for each valid link from this tweet if only if
+        it meets such criteria as the number of persons who have twitted about it
+        before. """
+
+        if self.alreadyIndexed() == True:
+            return [] # we only publish the first time we index the links
+        self.indexByLinks()
+        linksToPublish = []
+        for link in self.links:
+            # Now how many distinct twitter users have tweeted about this link ?
+            tweetEntries = tweetsIndexedByLinks[link.url].values()
+            if len(tweetEntries) == 1:
+                continue # First time this link is twitted, let's skip it
+            convergingTweets = [Tweet(entry) for entry in tweetEntries]
+            twitterUsers = {}
+            for convergingTweet in convergingTweets:
+                twitterUsers[convergingTweet.userId] = True
+            twitterUsers = twitterUsers.keys()
+            nbOfTwitteUsers = len(twitterUsers)  
+            print asctime(), \
+                  nbOfTwitteUsers, \
+                  "user(s) have twitted about", \
+                  link.url.encode("utf8","replace"), \
+                  "; here they are :", \
+                  twitterUsers
+            if nbOfTwitteUsers >= TWITTOS_THRESHOLD:
+                # At least TWITTOS_THRESHOLD twitter users have twitted
+                # about this URL.
+                for convergingTweet in convergingTweets:
+                    print asctime(), "about to publish tweet", convergingTweet.text.encode("utf8","replace")
+                    linksToPublish.append((link,convergingTweet))
+        return linksToPublish
 
 def get():
-    ret=list()
     TEMPORARILY_SKIPS = []
 
     scriptPrefix = 'https://script.google.com/macros/s/' \
@@ -221,11 +298,13 @@ def get():
         sleep(2)
         feed = feedparser.parse(feedURL)
         entries += feed.entries
+    print asctime(), len(entries), "entries in our OUT-OF-lists feeds"
     # Let's process each entry from these feeds
     for entry in entries:
         # Let's have a look at each tweet and have their links checked for
-        # future reference via knownTweets
+        # future reference via tweetsIndexedByLinks
         tweet = Tweet(entry)
+        tweet.indexByLinks()
 
     # Now let's examine tweets from the lists and check their links
                     
@@ -234,32 +313,16 @@ def get():
                  + l
                  for l in lists ]
     
-    entries = []
+    listEntries = []
     for feedURL in listFeeds:
         sleep(2)
         feed = feedparser.parse(feedURL)
-        entries += feed.entries
-    for entry in entries:
-        tweet = Tweet(entry)
-        if not tweet.alreadyProcessed:
-            for link in tweet.links:
-                # Now how many distinct twitter users have tweeted about this ?
-                tweets = [Tweet(entry) for entry in knownTweets[link.url].values()]
-                twitterUsers = {}
-                for tweet in tweets:
-                    twitterUsers[tweet.userId] = True
-                twitterUsers = twitterUsers.keys()
-                nbOfTwitteUsers = len(twitterUsers)  
-                print asctime(), \
-                      nbOfTwitteUsers, \
-                      "user(s) have twitted about", \
-                      link.url, \
-                      "; here they are :", \
-                      twitterUsers
-                if nbOfTwitteUsers >= TWITTOS_THRESHOLD:
-                    # At least TWITTOS_THRESHOLD twitter users have twitted
-                    # about this URL.
-                    for tweet in tweets:
-                        print asctime(), "adding tweet", tweet.text
-                        ret.append((link,tweet))
+        listEntries += feed.entries
+    print asctime(), len(listEntries), "entries in our lists feeds"
+    if len(listEntries) == 0:
+        print "\n".join(listFeeds)
+    ret=list()
+    for listEntry in listEntries:
+        tweet = Tweet(listEntry)
+        ret += tweet.linksToPublish()
     return ret

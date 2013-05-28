@@ -1,4 +1,4 @@
-# This Python file uses the following encoding: utf-8
+﻿# This Python file uses the following encoding: utf-8
 #
 # This file is part of rss2reddit_using_newsfrbot.
 # 
@@ -31,7 +31,7 @@ from time import *
 
 # How long in seconds does the bot have to wait before checking
 # its sources once again ?
-NAP_DURATION = 300
+NAP_DURATION = 200
 
 # TODO : improve the "database" system that will get corrupted if interrupted and take o(n) time with n=entries already published
 
