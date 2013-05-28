@@ -1,7 +1,7 @@
 rss2reddit_using_newsfrbot
 =========
 
-This bot parses RSS feeds from Twitter posts them to relevant subreddits.
+This bot retrieves popular links from some Twitter lists and posts them to relevant subreddits.
 
 The current and subsequent versions of this code are now GPLv3
 
