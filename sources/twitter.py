@@ -45,7 +45,8 @@ queries = [ 'edtech+lang%3Afr',
 # of their members retweet some link ?
 
 lists = [ 'petermortimer/di',
-          'siggg/PedagoRique' ]
+          'siggg/PedagoRique',
+          'cnedinnovation/di-cned' ]
 
 # CAUTION : you MUST follow the instructions on labnol.org so that you get
 # YOUR OWN myGoogleScriptID. DO NOT USE the one given below.
@@ -187,7 +188,7 @@ class Tweet:
         if result == True:
             print "(already indexed)"
 	else:
-	    print "(indexing)"
+	    print "(never indexed so far)"
         return result
 
     def validLinks(self):
